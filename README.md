@@ -16,6 +16,7 @@ A local Model Context Protocol (MCP) server that provides access to browser hist
 - [API Reference](#-api-reference)
 - [Browser Support](#-browser-support)
 - [Troubleshooting](#-troubleshooting)
+- [Changelog](#-changelog)
 - [Privacy & Security](#-privacy--security)
 - [License](#-license)
 
@@ -44,7 +45,12 @@ A local Model Context Protocol (MCP) server that provides access to browser hist
    uv run mcp dev server/main.py
    ```
 
-3. **Install for Claude Desktop** (you will need to restart Claude Desktop afterwards):
+3. **Install for your preferred AI assistant**:
+   
+   **For Goose Desktop** (Recommended):
+   - See [Use with Goose Desktop](#use-with-goose-desktop) for detailed instructions
+   
+   **For Claude Desktop**:
    ```bash
    uv run mcp install server/main.py --name "Browser History MCP"
    ```
@@ -112,6 +118,69 @@ uv run mcp dev server/main.py
 uv run mcp install server/main.py --name "Browser History MCP"
 ```
 
+### Use with Goose Desktop
+
+Goose Desktop provides a streamlined way to add MCP extensions through its Settings page.
+
+#### Installation Steps
+
+1. **Open Goose Desktop Settings**
+   - Click the menu icon (☰) in the top-right corner
+   - Select "Settings" from the dropdown menu
+
+2. **Navigate to Extensions**
+   - In the Settings page, find the "Extensions" section
+   - Click "Add Extension" or the "+" button
+
+3. **Configure the MCP Server**
+   
+   Fill in the following fields:
+   
+   - **Name**: `Browser History MCP`
+   
+   - **Command**: Enter the full command as a single string:
+     ```
+     uvx run --with mcp[cli] mcp run [path to mcp code]/server/main.py
+     ```
+   
+   **Important**: 
+   - Replace `[path to mcp code]` with the actual path where you cloned the repository
+   - Everything goes on one line in the Command field
+   - No separate Args field - all arguments are part of the command string
+   - Use `uvx` instead of `uv` for running MCP tools
+
+4. **Save and Restart**
+   - Click "Save" to add the extension
+   - Restart Goose Desktop to load the new MCP server
+   - The browser history tools will now be available in your chat
+
+#### Example Configuration
+
+Based on the actual Goose Desktop UI, your configuration should look like this:
+
+```
+Name: Browser History MCP
+Command: uvx run --with mcp[cli] mcp run [path to mcp code]/server/main.py
+```
+
+**Note**: The entire command (executable + all arguments) goes in the single Command field as one continuous string. Use `uvx` (not `uv`) for running MCP tools.
+
+#### Verification
+
+After adding the extension, you can verify it's working:
+
+1. Open a new chat in Goose Desktop
+2. Try using the browser history tools:
+   - "Check browser status" - Should show available browsers
+   - "Search browser history for github" - Should return results
+3. If you see results, the extension is successfully installed!
+
+#### Troubleshooting
+
+- **Extension not showing**: Make sure you've restarted Goose Desktop after adding the configuration
+- **Permission denied**: Ensure the path to `server/main.py` is correct and accessible
+- **uv command not found**: Update the `command` field to use the full path to your `uv` executable (find it with `which uv`)
+
 ## 📚 API Reference
 
 ### Core Tools
@@ -167,6 +236,31 @@ uv run mcp install server/main.py --name "Browser History MCP"
   }
 }
 ```
+
+### Common Issues and Fixes
+
+#### Search Function Returns No Results or Error
+
+**Issue**: The `search_browser_history` tool may fail with an error like `'str' object has no attribute 'get'` when searching through browser history.
+
+**Root Cause**: The search function expects cached history to be a simple list, but when `get_browser_history` is called with `all_browsers=True` (the default), it returns a dictionary with metadata about which browsers succeeded/failed.
+
+**Fix Applied**: Updated the `tool_search_browser_history` function in `server/browser_utils.py` to handle both return types:
+- Detects if the response is a dictionary or list
+- Extracts `history_entries` from dictionary responses
+- Properly caches only the history entries list, not the full metadata dict
+
+**Status**: ✅ Fixed in version 1.0.1
+
+**Verification**: After applying this fix, restart Claude Desktop to reload the MCP server. The search function will then work correctly for any query.
+
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes, bug fixes, and improvements.
+
+### Recent Updates
+- **v1.0.1** (2025-12-31): Fixed critical bug in `search_browser_history` function
+- **v1.0.0** (2025-12-30): Initial release with multi-browser support and comprehensive analysis tools
 
 ## 🔒 Privacy & Security
 

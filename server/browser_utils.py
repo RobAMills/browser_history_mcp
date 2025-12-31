@@ -636,7 +636,19 @@ async def tool_get_browser_history(time_period_in_days: int, CACHED_HISTORY: Cac
 
 async def tool_search_browser_history(query: str, CACHED_HISTORY: CachedHistory) -> List[HistoryEntryDict]:
     if not CACHED_HISTORY.has_history():
-        history = await tool_get_browser_history(7, CACHED_HISTORY, "", True)
+        history_data = await tool_get_browser_history(7, CACHED_HISTORY, "", True)
+        
+        # Handle both return types: BrowserHistoryResult dict or list of HistoryEntryDict
+        if isinstance(history_data, dict):
+            # Extract history_entries from BrowserHistoryResult
+            history = history_data.get('history_entries', [])
+            
+            # Cache the history entries list (not the full dict)
+            CACHED_HISTORY.add_history(history, 7, 'all_browsers')
+        else:
+            # Direct list of HistoryEntryDict
+            history = history_data
+            CACHED_HISTORY.add_history(history, 7, 'auto-detected')
     else:
         history = CACHED_HISTORY.get_history()
     
